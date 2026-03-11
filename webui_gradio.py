@@ -24,6 +24,53 @@ from src.exceptions import Paper2PosterError
 
 logger = setup_logger("WebUI")
 
+
+def test_api_connection(api_key: str, api_base_url: str, model_name: str) -> str:
+    """
+    测试 API 连接是否正常
+
+    Args:
+        api_key: API 密钥
+        api_base_url: API 基础 URL
+        model_name: 模型名称
+
+    Returns:
+        测试结果信息
+    """
+    if not api_key or api_key.strip() == "":
+        return "❌ 请输入 API 密钥"
+
+    try:
+        from openai import OpenAI
+        from openai import AuthenticationError, RateLimitError, APIConnectionError
+
+        client = OpenAI(
+            api_key=api_key.strip(),
+            base_url=api_base_url.strip() if api_base_url.strip() else "https://api.openai.com/v1"
+        )
+
+        # 发送一个简单的测试请求
+        response = client.chat.completions.create(
+            model=model_name.strip() if model_name.strip() else "gpt-4-turbo-preview",
+            messages=[{"role": "user", "content": "Hi"}],
+            max_tokens=5,
+            timeout=10
+        )
+
+        return f"✅ API 连接成功！\n\n模型: {model_name}\n响应: {response.choices[0].message.content}"
+
+    except AuthenticationError:
+        return "❌ API 密钥认证失败\n\n💡 请检查：\n1. API 密钥是否正确\n2. API 密钥是否已过期"
+    except RateLimitError:
+        return "⚠️ API 请求频率超限\n\n💡 请稍等几秒后重试"
+    except APIConnectionError as e:
+        return f"❌ 无法连接到 API 服务\n\n💡 请检查：\n1. 网络连接是否正常\n2. API URL 是否正确\n3. 是否需要代理\n\n错误详情: {str(e)[:100]}"
+    except Exception as e:
+        error_str = str(e).lower()
+        if "timeout" in error_str:
+            return "❌ 连接超时\n\n💡 请检查网络连接或尝试其他 API 服务"
+        return f"❌ 测试失败: {str(e)[:200]}"
+
 # 全局变量存储输出目录
 output_base_dir = Path(__file__).parent / "output"
 output_base_dir.mkdir(exist_ok=True)
@@ -615,6 +662,17 @@ def create_ui():
                                 placeholder="gpt-4-turbo-preview",
                                 value=os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview")
                             )
+
+                            # API 测试按钮和结果显示
+                            with gr.Row():
+                                test_api_btn = gr.Button("🔌 测试 API 连接", variant="secondary", size="sm")
+                            test_result = gr.Textbox(
+                                label="测试结果",
+                                visible=True,
+                                interactive=False,
+                                lines=4,
+                                show_copy_button=True
+                            )
                         
                         gr.Markdown("## 🎨 海报设置")
                         
@@ -1056,6 +1114,13 @@ def create_ui():
             """)
         
         # 事件绑定
+        # API 测试按钮点击事件
+        test_api_btn.click(
+            fn=test_api_connection,
+            inputs=[api_key, api_base_url, model_name],
+            outputs=[test_result]
+        )
+
         def update_json_visibility(save):
             return gr.update(visible=save)
         
