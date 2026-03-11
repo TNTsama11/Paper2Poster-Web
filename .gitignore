@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+
+# Output files
+output/
+input/*.pdf
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Playwright
+.pytest_cache/
+playwright-state/
+
+# Backup and temporary files
+*.backup*
+*.broken
+*.deprecated
+backups/
+*_20[0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]*.py
+templates/*副本*
+
+# Claude Code
+.claude/
+

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ poster.title }}</title>
+    <script src="tailwindcss3.4.17.es"></script>
+    <style>
+        @import url('css2.css');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif;
+            background: #2d3748; 
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 新增：图片横向排列容器 */
+        .figures-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: flex-start; /* 顶部对齐 */
+            width: 100%;
+        }
+
+        
+        #preview-wrapper {
+            transform-origin: center center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .poster-container {
+            width: 1920px;
+            height: 1080px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            font-size: 16px; 
+        }
+        
+        /* ===== Header ===== */
+        .header-section {
+            background: linear-gradient(135deg, #3c366b 0%, #4c51bf 100%);
+            color: white;
+            padding: 1.2em 2em;
+            text-align: center;
+            flex: 0 0 auto;
+            border-bottom: 0.3em solid #f6ad55;
+        }
+        
+        .poster-title { font-size: 2.5em; font-weight: 800; margin-bottom: 0.3em; line-height: 1.1; }
+        .authors { font-size: 1.2em; margin-bottom: 0.2em; font-weight: 500; opacity: 0.95; }
+        .affiliation { font-size: 0.9em; opacity: 0.8; font-style: italic; }
+        
+        /* ===== Grid Layout ===== */
+        .content-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 26% 1fr; 
+            gap: 1em;
+            padding: 1.2em;
+            background: #f1f5f9;
+            align-items: stretch;
+            min-height: 0;
+        }
+        
+        .left-column { display: flex; flex-direction: column; gap: 1em; height: 100%; }
+        
+        /* 右侧栏布局核心调整 */
+        .right-column {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            /* Row 1: Intro / Methods (auto height)
+               Row 2: 占位 (配合 grid-auto-flow)
+               Row 3 (Results): 1fr -> 占据所有剩余空间，这就实现了Results增高
+               Row 4 (Ref): auto -> 只占据内容所需最小高度，这就实现了Ref变窄
+            */
+            grid-template-rows: auto auto 1fr auto; 
+            gap: 1em;
+            height: 100%;
+        }
+        
+        /* ===== Panels ===== */
+        .panel {
+            background: white;
+            border-radius: 0.5em;
+            padding: 1em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-abstract { background: #fffbef; border-left: 0.4em solid #f6ad55; flex: 0 0 auto; }
+        .panel-conclusion { margin-top: auto; background: #ebf8ff; border-left: 0.4em solid #4299e1; flex: 0 0 auto; }
+        .panel-wide { grid-column: span 2; }
+
+        .panel-title {
+            font-size: 1.4em; font-weight: 700; color: #2c5282;
+            margin-bottom: 0.6em; padding-bottom: 0.3em;
+            border-bottom: 2px solid #cbd5e0; text-transform: uppercase;
+        }
+        .panel-abstract .panel-title { color: #d97706; border-bottom-color: #fbd38d; }
+        .panel-conclusion .panel-title { color: #2b6cb0; border-bottom-color: #bee3f8; }
+
+        /* 内容通用样式 */
+        .panel-content {
+            font-size: 1em; line-height: 1.4; color: #2d3748;
+            flex: 1; text-align: justify;
+        }
+        .panel-content ul, .panel-content ol { padding-left: 1.2em; margin: 0; }
+        .panel-content li { margin-bottom: 0.3em; }
+        
+        /* --- 特殊内容调整 --- */
+        
+        /* Introduction 字体放大 (1.2倍) */
+        .text-large {
+            font-size: 1.2em; 
+            line-height: 1.6;
+        }
+
+        /* References 紧凑模式 */
+        .panel-compact {
+            padding: 0.8em 1em; /* 减少内边距 */
+        }
+        .references-list { 
+            font-size: 0.75em; /* 缩小字体 */
+            line-height: 1.2; 
+        }
+        .references-list li { margin-bottom: 0.2em; }
+
+        .text-cols-2 { columns: 2; column-gap: 2em; }
+
+        /* ===== Figures & Badges ===== */
+        .figure-container {
+            margin: 0.5em 0; display: flex; flex-direction: column;
+            align-items: center; padding: 0.4em;
+            background: #fff; border-radius: 6px;
+            border: 1px solid #edf2f7;
+        }
+        
+        .figure-img {
+            max-width: 100%; height: auto;
+            max-height: 14em; 
+            object-fit: contain; border-radius: 4px;
+        }
+        
+        .figure-caption {
+            font-size: 0.85em; color: #718096; text-align: center;
+            font-style: italic; margin-top: 0.4em; line-height: 1.25;
+        }
+        
+        .figure-type-badge {
+            align-self: flex-start;
+            font-size: 0.7em; font-weight: 700;
+            padding: 2px 6px; border-radius: 4px;
+            text-transform: uppercase; margin-bottom: 4px;
+            letter-spacing: 0.05em;
+        }
+        .badge-results, .badge-result { background: #def7ec; color: #03543f; }
+        .badge-methods, .badge-method, .badge-architecture { background: #e1effe; color: #1e429f; }
+        .badge-introduction, .badge-intro { background: #f3f4f6; color: #1f2937; }
+        .badge-chart { background: #fff8f1; color: #9c4221; }
+
+        .panel-main-figure {
+            min-height: 10em; 
+            flex: 1; 
+            justify-content: center;
+        }
+        
+        .panel-main-figure .figure-img { 
+            max-height: 20em; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+                /* 修改：Key Figures 面板里的图片容器 */
+        .panel-main-figure .figure-container {
+            flex: 1; /* 让图片平分宽度 */
+            min-width: 0; /* 防止图片过宽撑破 flex */
+            margin: 0; /* 去掉多余外边距 */
+        }
+
+        /* 修改：主图的最大高度限制，防止单张图过高 */
+        .panel-main-figure .figure-img {
+            max-height: 280px; /* 限制高度，原先的 20em/320px 可能太大了 */
+            width: 100%; /* 宽度自适应 */
+            height: auto;
+            object-fit: contain;
+            background: #f8f9fa; /* 给透明图片加个底色，防止混淆 */
+        }
+
+        /* Equations */
+        .equation-box {
+            font-family: 'Courier New', monospace; background: #edf2f7;
+            padding: 0.5em; margin: 0.5em 0; border-radius: 4px; font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div id="preview-wrapper">
+        <div class="poster-container" id="poster">
+            <div class="header-section">
+                <div class="poster-title">{{ poster.title }}</div>
+                <div class="authors">{{ poster.authors }}</div>
+                <div class="affiliation">{{ poster.affiliation }}</div>
+            </div>
+            
+            <div class="content-container">
+                <div class="left-column">
+                    <div class="panel panel-abstract">
+                        <div class="panel-title">Abstract</div>
+                        <div class="panel-content">
+                            {{ poster.abstract }}
+                        </div>
+                    </div>
+                    
+                    <div class="panel panel-main-figure">
+                        <div class="panel-title">Key Figures</div>
+                        
+                        {# 1. 准备图片数据 #}
+                        {% set result_figures = poster.figures | selectattr('placement', 'equalto', 'results') | list %}
+                        
+                        {# 逻辑：优先取 Results 的前2张 #}
+                        {% if result_figures %}
+                            {% set sorted_results = result_figures | sort(attribute='priority', reverse=True) %}
+                            {% if sorted_results | length >= 2 %}
+                                {% set key_figures = sorted_results[:2] %}
+                            {% else %}
+                                {% set all_sorted = poster.figures | sort(attribute='priority', reverse=True) %}
+                                {% set remaining = [] %}
+                                {% for f in all_sorted %}
+                                    {% if f not in sorted_results %}
+                                        {% set _ = remaining.append(f) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% set key_figures = sorted_results + remaining[:2 - (sorted_results|length)] %}
+                            {% endif %}
+                        {% elif poster.figures %}
+                            {% set sorted_figs = poster.figures | sort(attribute='priority', reverse=True) %}
+                            {% set key_figures = sorted_figs[:2] %}
+                        {% else %}
+                            {% set key_figures = [] %}
+                        {% endif %}
+                        
+                        {# 2. 渲染区域：使用 figures-row 让图片并排 #}
+                        <div class="panel-content" style="display: flex; flex-direction: column; justify-content: center;">
+                            {% if key_figures %}
+                                <div class="figures-row">
+                                    {% for fig in key_figures %}
+                                    <div class="figure-container">
+                                        <span class="figure-type-badge badge-{{ fig.type }}">{{ fig.type }}</span>
+                                        <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                                        <div class="figure-caption" style="max-height: 3em; overflow: hidden; text-overflow: ellipsis;">{{ fig.caption }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% elif poster.main_figure_path %}
+                                <div class="figure-container">
+                                    <img src="images/{{ poster.main_figure_path }}" alt="Main Figure" class="figure-img">
+                                    <div class="figure-caption">{{ poster.main_figure_caption }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="panel panel-conclusion">
+                        <div class="panel-title">{{ poster.conclusion.title }}</div>
+                        <div class="panel-content">
+                            {{ poster.conclusion.content | markdown | safe }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="right-column">
+                    
+                    <div class="panel">
+                        <div class="panel-title">{{ poster.introduction.title }}</div>
+                        <div class="panel-content text-large">
+                            {{ poster.introduction.content | markdown | safe }}
+                            
+                            {# 只有在没有文字内容撑开时才显示图片，或者让图片小一点 #}
+                            {% set intro_figs = poster.figures | selectattr('placement', 'equalto', 'introduction') | list %}
+                            {% if intro_figs %}
+                                <div class="figure-container">
+                                    <img src="images/{{ intro_figs[0].path }}" class="figure-img">
+                                    <div class="figure-caption">{{ intro_figs[0].caption }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <div class="panel-title">{{ poster.methods.title }}</div>
+                        <div class="panel-content">
+                            {{ poster.methods.content | markdown | safe }}
+                            {% set meth_figs = poster.figures | selectattr('placement', 'equalto', 'methods') | list %}
+                            {% if meth_figs %}
+                                <div class="figure-container">
+                                    <img src="images/{{ meth_figs[0].path }}" class="figure-img">
+                                    <div class="figure-caption">{{ meth_figs[0].caption }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="panel panel-wide">
+                        <div class="panel-title">{{ poster.results.title }}</div>
+                        <div class="panel-content text-cols-2">
+                            {{ poster.results.content | markdown | safe }}
+                        </div>
+                        
+                        {# Results 额外图片 #}
+                        {% set res_figs = poster.figures | selectattr('placement', 'equalto', 'results') | list %}
+                        {% if res_figs|length > 2 %}
+                        <div style="display:flex; gap:10px; margin-top:10px; justify-content: center;">
+                             {% for fig in res_figs[2:4] %}
+                                <div class="figure-container" style="flex:1;">
+                                    <img src="images/{{ fig.path }}" class="figure-img">
+                                    <div class="figure-caption">{{ fig.caption }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if poster.equations and poster.equations|length > 0 %}
+                    <div class="panel panel-wide" style="flex: 0 0 auto;">
+                        <div class="panel-title">Key Equations</div>
+                        <div class="panel-content" style="display:flex; gap:20px; flex-wrap:wrap;">
+                            {% for eq in poster.equations[:2] %}
+                            <div class="equation-box" style="flex:1; min-width: 300px;">
+                                <div>{{ eq.content }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="panel panel-wide panel-compact" style="flex: 0 0 auto;">
+                        <div class="panel-title">References</div>
+                        <div class="panel-content references-list text-cols-2">
+                            <ol>
+                            {% for ref in poster.references[:6] %}
+                                <li>{{ ref }}</li>
+                            {% endfor %}
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function fitContent() {
+            const poster = document.getElementById('poster');
+            const wrapper = document.getElementById('preview-wrapper');
+            const targetHeight = 1080;
+            
+            // 预览缩放
+            const scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 0.95;
+            wrapper.style.transform = `scale(${scale})`;
+
+            // 内容自适应缩放
+            poster.style.fontSize = '16px'; 
+            let currentSize = 16;
+            
+            // 循环检测，如果内容溢出则缩小字体
+            while (poster.scrollHeight > targetHeight + 5 && currentSize > 8) {
+                currentSize -= 0.5;
+                poster.style.fontSize = currentSize + 'px';
+            }
+            console.log("Final font size: " + currentSize + "px");
+        }
+
+        window.addEventListener('load', fitContent);
+        window.addEventListener('resize', fitContent);
+    </script>
+</body>
+</html>

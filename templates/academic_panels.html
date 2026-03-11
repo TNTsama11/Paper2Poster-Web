@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ poster.title }}</title>
+    <script src="tailwindcss3.4.17.es"></script>
+    <style>
+        @import url('css2.css');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans SC', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;  /* 水平居中 */
+            align-items: flex-start;  /* 顶部对齐 */
+        }
+        
+        .poster-container {
+            width: {{ width }}px;
+            height: {{ height }}px;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);  /* 减轻阴影 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin: 0 auto;  /* 确保居中 */
+        }
+        
+        /* ===== 标题栏 ===== */
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 30px;  /* 减少内边距 */
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .poster-title {
+            font-size: 2.1rem;  /* 减小字体 */
+            font-weight: 700;
+            margin-bottom: 8px;  /* 减少间距 */
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+        }
+        
+        .authors {
+            font-size: 1.05rem;  /* 减小字体 */
+            margin-bottom: 5px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        .affiliation {
+            font-size: 0.92rem;  /* 减小字体 */
+            opacity: 0.88;
+            font-style: italic;
+        }
+        
+        /* ===== 主体面板区 ===== */
+        .panels-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: minmax(180px, auto);  /* 自适应行高 */
+            gap: 12px;  /* 减少间距，更紧凑 */
+            padding: 20px;  /* 减少外边距 */
+            background: #f8f9fa;
+            align-items: start;  /* 顶部对齐 */
+        }
+        
+        /* ===== 面板样式 ===== */
+        .panel {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;  /* 减少内边距 */
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+            overflow: visible;  /* 允许内容完整显示 */
+            height: fit-content;  /* 自适应内容高度 */
+        }
+        
+        .panel:hover {
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+        
+        /* 特殊面板尺寸 */
+        .panel-abstract {
+            grid-column: span 3;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+            border-left: 5px solid #ffc107;
+        }
+        
+        .panel-large {
+            grid-row: span 2;
+        }
+        
+        .panel-wide {
+            grid-column: span 2;
+        }
+        
+        /* ===== 面板标题 ===== */
+        .panel-title {
+            font-size: 1.2rem;  /* 稍微减小 */
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;  /* 减少间距 */
+            padding-bottom: 8px;
+            border-bottom: 3px solid #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .panel-abstract .panel-title {
+            color: #f57c00;
+            border-bottom-color: #ffc107;
+        }
+        
+        /* ===== 面板内容 ===== */
+        .panel-content {
+            flex: 1;
+            font-size: 0.88rem;  /* 稍微减小字体 */
+            line-height: 1.6;  /* 减少行高 */
+            color: #333;
+            overflow-y: visible;  /* 不滚动，完整显示 */
+            max-height: none;  /* 移除高度限制 */
+        }
+        
+        .panel-content ul {
+            padding-left: 22px;
+            margin: 0;
+        }
+        
+        .panel-content li {
+            margin-bottom: 6px;  /* 减少列表项间距 */
+            position: relative;
+        }
+        
+        .panel-content li::marker {
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .panel-content p {
+            margin-bottom: 10px;
+        }
+        
+        .panel-content strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+        
+        /* ===== 图片区域 ===== */
+        .figure-container {
+            margin-top: 10px;  /* 减少上边距 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;  /* 减少间距 */
+        }
+        
+        .figure-img {
+            max-width: 100%;
+            max-height: 400px;  /* 增加高度 */
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        
+        .panel-large .figure-img {
+            max-height: 700px;  /* 大面板增加更多高度 */
+        }
+        
+        .panel-wide .figure-img {
+            max-height: 550px;  /* 宽面板也增加高度 */
+        }
+        
+        .figure-caption {
+            font-size: 0.8rem;  /* 稍微减小 */
+            color: #666;
+            text-align: center;
+            font-style: italic;
+            line-height: 1.3;
+            padding: 0 8px;
+        }
+        
+        .figure-type-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .badge-result {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-architecture {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .badge-flowchart {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .badge-chart {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-table {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-equation {
+            background: #e7f3ff;
+            color: #0056b3;
+            font-weight: 700;
+        }
+        
+        .badge-general {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        /* ===== 公式样式 ===== */
+        .equation-container {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .equation-content {
+            font-size: 0.95rem;
+            color: #2c3e50;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .equation-desc {
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+            margin-top: 8px;
+            font-family: 'Noto Sans SC', sans-serif;
+        }
+        
+        /* ===== 参考文献特殊样式 ===== */
+        .references-list {
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+        
+        .references-list ol {
+            padding-left: 20px;
+        }
+        
+        .references-list li {
+            margin-bottom: 8px;
+        }
+        
+        /* ===== 页脚 ===== */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 15px 30px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        /* ===== 响应式调整 ===== */
+        @media (max-width: 1400px) {
+            .panels-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .panel-abstract {
+                grid-column: span 2;
+            }
+        }
+        
+        /* ===== 滚动条美化 ===== */
+        .panel-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .panel-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .panel-content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+        
+        .panel-content::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="poster-container">
+        <!-- 标题区 -->
+        <div class="header-section">
+            <div class="poster-title">{{ poster.title }}</div>
+            <div class="authors">{{ poster.authors }}</div>
+            <div class="affiliation">{{ poster.affiliation }}</div>
+        </div>
+        
+        <!-- 面板区 -->
+        <div class="panels-container">
+            <!-- Abstract 面板 - 横跨全宽 -->
+            <div class="panel panel-abstract">
+                <div class="panel-title">Abstract</div>
+                <div class="panel-content">
+                    {{ poster.abstract }}
+                </div>
+            </div>
+            
+            {% set figures_by_placement = {
+                'introduction': [],
+                'methods': [],
+                'results': [],
+                'any': []
+            } %}
+            
+            {% for fig in poster.figures %}
+                {% if fig.placement in figures_by_placement %}
+                    {% set _ = figures_by_placement[fig.placement].append(fig) %}
+                {% else %}
+                    {% set _ = figures_by_placement['any'].append(fig) %}
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Introduction 面板 -->
+            <div class="panel">
+                <div class="panel-title">{{ poster.introduction.title }}</div>
+                <div class="panel-content">
+                    {{ poster.introduction.content | markdown | safe }}
+                </div>
+                {% if figures_by_placement['introduction'] %}
+                    {% set fig = figures_by_placement['introduction'][0] %}
+                    <div class="figure-container">
+                        <span class="figure-type-badge badge-{{ fig.type }}">{{ fig.type }}</span>
+                        <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ fig.caption }}</div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Methods 面板 - 宽面板 -->
+            <div class="panel panel-wide">
+                <div class="panel-title">{{ poster.methods.title }}</div>
+                <div class="panel-content">
+                    {{ poster.methods.content | markdown | safe }}
+                </div>
+                {% if figures_by_placement['methods'] %}
+                    {% set fig = figures_by_placement['methods'][0] %}
+                    <div class="figure-container">
+                        <span class="figure-type-badge badge-{{ fig.type }}">{{ fig.type }}</span>
+                        <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ fig.caption }}</div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Key Figure 面板 - 大面板 -->
+            <div class="panel panel-large">
+                <div class="panel-title">Key Figure</div>
+                {% set result_figures = figures_by_placement['results'] %}
+                {% if result_figures %}
+                    {# 优先显示 results 分类的最高优先级图片 #}
+                    {% set sorted_results = result_figures | sort(attribute='priority', reverse=True) %}
+                    {% set main_fig = sorted_results[0] %}
+                    <div class="figure-container">
+                        <span class="figure-type-badge badge-{{ main_fig.type }}">{{ main_fig.type }}</span>
+                        <img src="images/{{ main_fig.path }}" alt="{{ main_fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ main_fig.caption }}</div>
+                    </div>
+                {% elif poster.figures %}
+                    {# 如果没有专门的 results 图片，找优先级最高的前2张图 #}
+                    {% set sorted_figs = poster.figures | sort(attribute='priority', reverse=True) %}
+                    {% for fig in sorted_figs[:2] %}
+                        <div class="figure-container">
+                            <span class="figure-type-badge badge-{{ fig.type }}">{{ fig.type }}</span>
+                            <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                            <div class="figure-caption">{{ fig.caption }}</div>
+                        </div>
+                    {% endfor %}
+                {% elif poster.main_figure_path %}
+                    <div class="figure-container">
+                        <img src="images/{{ poster.main_figure_path }}" alt="Main Figure" class="figure-img">
+                        <div class="figure-caption">{{ poster.main_figure_caption }}</div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Results 面板 - 宽面板 -->
+            <div class="panel panel-wide">
+                <div class="panel-title">{{ poster.results.title }}</div>
+                <div class="panel-content">
+                    {{ poster.results.content | markdown | safe }}
+                </div>
+                {# 显示results相关图片，或者显示第二张重要图片 #}
+                {% if figures_by_placement['results'] and figures_by_placement['results']|length > 1 %}
+                    {% set sorted_results = figures_by_placement['results'] | sort(attribute='priority', reverse=True) %}
+                    {% set fig = sorted_results[1] %}
+                    <div class="figure-container">
+                        <span class="figure-type-badge badge-{{ fig.type }}">{{ fig.type }}</span>
+                        <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ fig.caption }}</div>
+                    </div>
+                {% elif poster.figures and poster.figures|length > 2 %}
+                    {% set sorted_figs = poster.figures | sort(attribute='priority', reverse=True) %}
+                    {% if sorted_figs|length > 2 %}
+                        {% set fig = sorted_figs[2] %}
+                        <div class="figure-container">
+                            <span class="figure-type-badge badge-{{ fig.type }}">{{ fig.type }}</span>
+                            <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                            <div class="figure-caption">{{ fig.caption }}</div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <!-- Conclusion 面板 -->
+            <div class="panel">
+                <div class="panel-title">{{ poster.conclusion.title }}</div>
+                <div class="panel-content">
+                    {{ poster.conclusion.content | markdown | safe }}
+                </div>
+            </div>
+            
+            <!-- Key Equations 面板（如果有公式） -->
+            {% if poster.equations and poster.equations|length > 0 %}
+            <div class="panel panel-wide">
+                <div class="panel-title">Key Equations</div>
+                <div class="panel-content">
+                    {% for eq in poster.equations[:3] %}
+                    <div class="equation-container">
+                        <div class="equation-content">{{ eq.content }}</div>
+                        {% if eq.description %}
+                        <div class="equation-desc">{{ eq.description }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- References 面板 -->
+            <div class="panel">
+                <div class="panel-title">References</div>
+                <div class="panel-content references-list">
+                    <ol>
+                    {% for ref in poster.references %}
+                        <li>{{ ref }}</li>
+                    {% endfor %}
+                    </ol>
+                </div>
+            </div>
+            
+            <!-- 额外的图片面板（增加数量） -->
+            {% set extra_figures = figures_by_placement['results'][1:] + figures_by_placement['methods'][2:] + figures_by_placement['any'] %}
+            {% for fig in extra_figures[:5] %}  {# 从2张增加到5张 #}
+            <div class="panel">
+                <div class="panel-title">
+                    {% if fig.figure_type == 'equation' %}
+                        Equation {{ loop.index }}
+                    {% else %}
+                        Figure {{ loop.index + 5 }}
+                    {% endif %}
+                </div>
+                <div class="figure-container">
+                    <span class="figure-type-badge badge-{{ fig.figure_type }}">{{ fig.figure_type }}</span>
+                    <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                    <div class="figure-caption">{{ fig.caption }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 页脚 -->
+        <div class="footer">
+            Generated by Paper2Poster-Web v1.2.0 | 
+            Visit: <a href="https://github.com">GitHub Repository</a>
+        </div>
+    </div>
+</body>
+</html>
+

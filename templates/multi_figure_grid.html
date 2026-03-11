@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ poster.title }}</title>
+    <script src="tailwindcss3.4.17.es"></script>
+    <style>
+        @import url('css2.css');
+        
+        body {
+            font-family: 'Noto Sans SC', 'Noto Serif SC', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px;
+            display: flex;
+            justify-content: center;  /* 水平居中 */
+            align-items: flex-start;  /* 顶部对齐 */
+            min-height: 100vh;
+        }
+        
+        .poster-container {
+            width: {{ width }}px;
+            height: {{ height }}px;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);  /* 减轻阴影 */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;  /* 确保居中 */
+        }
+        
+        /* 标题区域 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 35px;
+            text-align: center;
+        }
+        
+        .poster-title {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+        
+        .authors {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+            opacity: 0.95;
+        }
+        
+        .affiliation {
+            font-size: 0.95rem;
+            opacity: 0.85;
+        }
+        
+        /* 主内容区 - 使用 Grid 布局 */
+        .content-main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        /* 摘要横跨三列 */
+        .abstract-full {
+            grid-column: 1 / 4;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .abstract-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff9800;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        
+        .abstract-content {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        /* 左栏 */
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        /* 中栏 - 视觉核心区 */
+        .center-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        /* 右栏 */
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        /* 小节样式 */
+        .section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .section-content {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .section-content ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+        
+        .section-content li {
+            margin-bottom: 6px;
+        }
+        
+        /* 图片区域 */
+        .figure-box {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .figure-large {
+            min-height: 300px;
+            flex: 1;
+        }
+        
+        .figure-medium {
+            min-height: 200px;
+        }
+        
+        .figure-small {
+            min-height: 150px;
+        }
+        
+        .figure-img {
+            width: 100%;
+            height: auto;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+        
+        .figure-caption {
+            font-size: 0.8rem;
+            color: #555;
+            text-align: center;
+            font-style: italic;
+            line-height: 1.3;
+        }
+        
+        /* 参考文献 */
+        .references {
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+        
+        .references ol {
+            margin: 0;
+            padding-left: 18px;
+        }
+        
+        .references li {
+            margin-bottom: 6px;
+        }
+        
+        /* 图片类型标签 */
+        .figure-type-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        
+        .type-result {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .type-architecture {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .type-flowchart {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .type-chart {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .type-table {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="poster-container">
+        <!-- 标题区域 -->
+        <div class="header">
+            <div class="poster-title">{{ poster.title }}</div>
+            <div class="authors">{{ poster.authors }}</div>
+            <div class="affiliation">{{ poster.affiliation }}</div>
+        </div>
+        
+        <!-- 主内容区域 -->
+        <div class="content-main">
+            <!-- 摘要横跨全宽 -->
+            <div class="abstract-full">
+                <div class="abstract-title">Abstract</div>
+                <div class="abstract-content">{{ poster.abstract }}</div>
+            </div>
+            
+            <!-- 左栏 -->
+            <div class="left-column">
+                <!-- 引言 -->
+                <div class="section">
+                    <div class="section-title">{{ poster.introduction.title }}</div>
+                    <div class="section-content">
+                        {{ poster.introduction.content | markdown | safe }}
+                    </div>
+                </div>
+                
+                <!-- 引言区图片 -->
+                {% for fig in poster.figures %}
+                    {% if fig.placement == 'introduction' %}
+                    <div class="figure-box figure-small">
+                        <span class="figure-type-badge type-{{ fig.type }}">{{ fig.type }}</span>
+                        <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ fig.caption }}</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- 方法 -->
+                <div class="section">
+                    <div class="section-title">{{ poster.methods.title }}</div>
+                    <div class="section-content">
+                        {{ poster.methods.content | markdown | safe }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 中栏 - 核心视觉区 -->
+            <div class="center-column">
+                {% if poster.figures %}
+                    <!-- 主图（第一张图或指定的主图） -->
+                    {% set main_fig = poster.figures[0] %}
+                    <div class="figure-box figure-large">
+                        <span class="figure-type-badge type-{{ main_fig.type }}">{{ main_fig.type }}</span>
+                        <img src="images/{{ main_fig.path }}" alt="{{ main_fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ main_fig.caption }}</div>
+                    </div>
+                    
+                    <!-- 方法区其他图片 -->
+                    {% for fig in poster.figures[1:] %}
+                        {% if fig.placement == 'methods' %}
+                        <div class="figure-box figure-medium">
+                            <span class="figure-type-badge type-{{ fig.type }}">{{ fig.type }}</span>
+                            <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                            <div class="figure-caption">{{ fig.caption }}</div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                {% elif poster.main_figure_path %}
+                    <!-- 兼容旧版：使用 main_figure_path -->
+                    <div class="figure-box figure-large">
+                        <img src="images/{{ poster.main_figure_path }}" alt="Main Figure" class="figure-img">
+                        <div class="figure-caption">{{ poster.main_figure_caption }}</div>
+                    </div>
+                {% else %}
+                    <div class="figure-box figure-large">
+                        <div style="text-align: center; color: #999; padding: 50px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <p style="margin-top: 15px;">No figure available</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- 右栏 -->
+            <div class="right-column">
+                <!-- 结果 -->
+                <div class="section">
+                    <div class="section-title">{{ poster.results.title }}</div>
+                    <div class="section-content">
+                        {{ poster.results.content | markdown | safe }}
+                    </div>
+                </div>
+                
+                <!-- 结果区图片 -->
+                {% for fig in poster.figures[1:] %}
+                    {% if fig.placement == 'results' %}
+                    <div class="figure-box figure-medium">
+                        <span class="figure-type-badge type-{{ fig.type }}">{{ fig.type }}</span>
+                        <img src="images/{{ fig.path }}" alt="{{ fig.caption }}" class="figure-img">
+                        <div class="figure-caption">{{ fig.caption }}</div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- 结论 -->
+                <div class="section">
+                    <div class="section-title">{{ poster.conclusion.title }}</div>
+                    <div class="section-content">
+                        {{ poster.conclusion.content | markdown | safe }}
+                    </div>
+                </div>
+                
+                <!-- 参考文献 -->
+                <div class="section">
+                    <div class="section-title">References</div>
+                    <div class="section-content references">
+                        <ol>
+                        {% for ref in poster.references %}
+                            <li>{{ ref }}</li>
+                        {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
