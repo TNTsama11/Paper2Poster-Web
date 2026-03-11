@@ -6,10 +6,24 @@ import json
 from typing import List, Optional
 from pathlib import Path
 from openai import OpenAI
+from openai import (
+    AuthenticationError,
+    RateLimitError,
+    APIConnectionError,
+    APIStatusError
+)
 
 from .models import PosterContent, Figure
 from .vision_analyzer import VisionAnalyzer
 from .logger import setup_logger
+from .exceptions import (
+    LLMError,
+    LLMAuthError,
+    LLMRateLimitError,
+    LLMConnectionError,
+    LLMResponseError,
+    convert_llm_error
+)
 
 logger = setup_logger("Editor")
 
@@ -323,15 +337,27 @@ class LLMEditor:
         except json.JSONDecodeError as e:
             logger.error(f"JSON 解析失败: {e}")
             logger.error(f"LLM 原始输出: {content[:500]}...")
-            raise ValueError(f"LLM 返回的不是有效的 JSON 格式。请检查 API 配置或尝试其他模型。")
+            raise LLMResponseError(f"JSON 解析失败: {e}")
         except ValueError as e:
             # Pydantic 验证错误
             logger.error(f"数据验证失败: {e}")
             logger.error(f"问题数据: {json.dumps(content_dict, ensure_ascii=False, indent=2)}")
-            raise ValueError(f"LLM 返回的数据格式不完整。建议：\n1. 使用更强大的模型（如 GPT-4）\n2. 检查论文 PDF 质量\n3. 尝试更短的论文")
+            raise LLMResponseError(f"数据格式不完整: {e}")
+        except AuthenticationError as e:
+            logger.error(f"API 认证失败: {e}")
+            raise LLMAuthError()
+        except RateLimitError as e:
+            logger.error(f"API 速率限制: {e}")
+            raise LLMRateLimitError()
+        except APIConnectionError as e:
+            logger.error(f"API 连接失败: {e}")
+            raise LLMConnectionError(str(e))
+        except APIStatusError as e:
+            logger.error(f"API 状态错误: {e}")
+            raise convert_llm_error(e)
         except Exception as e:
             logger.error(f"LLM 调用失败: {e}")
-            raise ValueError(f"LLM 调用失败: {str(e)}\n请检查：\n1. API 密钥是否正确\n2. 网络连接\n3. API 账户余额")
+            raise convert_llm_error(e)
     
     def edit(self, full_text: str, image_manifest: List[str], max_images: int = 15, equations: List[dict] = None, abstract_max_words: int = 130, output_language: str = "auto") -> PosterContent:
         """

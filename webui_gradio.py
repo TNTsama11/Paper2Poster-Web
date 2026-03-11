@@ -20,6 +20,7 @@ from src.harvester import PDFHarvester
 from src.editor import LLMEditor
 from src.renderer import PosterRenderer
 from src.logger import setup_logger
+from src.exceptions import Paper2PosterError
 
 logger = setup_logger("WebUI")
 
@@ -269,8 +270,13 @@ def process_paper(
         
         return final_path, str(html_path), str(json_path) if json_path else None, status
         
+    except Paper2PosterError as e:
+        # 使用友好异常的消息
+        error_msg = f"❌ 处理失败\n\n{e.to_user_friendly()}"
+        logger.error(error_msg, exc_info=True)
+        return None, None, None, error_msg
     except Exception as e:
-        error_msg = f"❌ 处理失败: {str(e)}"
+        error_msg = f"❌ 处理失败: {str(e)}\n\n💡 如果问题持续，请检查：\n1. API 配置是否正确\n2. 网络连接\n3. PDF 文件质量"
         logger.error(error_msg, exc_info=True)
         return None, None, None, error_msg
 

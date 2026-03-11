@@ -10,6 +10,7 @@ import io
 import re
 
 from .logger import setup_logger
+from .exceptions import PDFExtractionError
 
 logger = setup_logger("Harvester")
 
@@ -71,9 +72,12 @@ class PDFHarvester:
             
             return result
             
+        except fitz.FileDataError as e:
+            logger.error(f"PDF 文件损坏或格式错误: {e}")
+            raise PDFExtractionError("PDF 文件损坏或格式错误", str(e))
         except Exception as e:
             logger.error(f"文本提取失败: {e}")
-            raise
+            raise PDFExtractionError("文本提取失败", str(e))
     
     def extract_images(self) -> List[str]:
         """
@@ -134,13 +138,16 @@ class PDFHarvester:
                         continue
             
             doc.close()
-            
+
             logger.info(f"图片提取完成，共 {len(image_list)} 张")
             return image_list
-            
+
+        except fitz.FileDataError as e:
+            logger.error(f"PDF 文件损坏或格式错误: {e}")
+            raise PDFExtractionError("PDF 文件损坏或格式错误", str(e))
         except Exception as e:
             logger.error(f"图片提取失败: {e}")
-            raise
+            raise PDFExtractionError("图片提取失败", str(e))
     
     def extract_equations(self, text: str) -> List[Dict[str, str]]:
         """

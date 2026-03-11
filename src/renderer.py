@@ -13,6 +13,7 @@ from .models import PosterContent
 from .logger import setup_logger
 from .overflow_detector import OverflowDetector
 from .content_compressor import ContentCompressor
+from .exceptions import RenderingError, TemplateError
 
 # 导入配置（延迟导入避免循环依赖）
 import config
@@ -114,7 +115,7 @@ class PosterRenderer:
 
         except Exception as e:
             logger.error(f"HTML 渲染失败: {e}")
-            raise
+            raise TemplateError(template_name, str(e))
 
     async def _smart_wait(self, page):
         """
@@ -221,7 +222,7 @@ class PosterRenderer:
 
         except Exception as e:
             logger.error(f"PDF 导出失败: {e}")
-            raise
+            raise RenderingError("PDF 导出失败", str(e))
     
     async def export_to_png(
         self,
@@ -276,7 +277,7 @@ class PosterRenderer:
 
         except Exception as e:
             logger.error(f"PNG 导出失败: {e}")
-            raise
+            raise RenderingError("PNG 导出失败", str(e))
     
     def render(
         self, 
