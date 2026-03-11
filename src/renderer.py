@@ -14,6 +14,9 @@ from .logger import setup_logger
 from .overflow_detector import OverflowDetector
 from .content_compressor import ContentCompressor
 
+# 导入配置（延迟导入避免循环依赖）
+import config
+
 logger = setup_logger("Renderer")
 
 
@@ -106,33 +109,83 @@ class PosterRenderer:
             
             logger.info(f"HTML 渲染完成: {html_path}")
             logger.info("=" * 60)
-            
+
             return str(html_path)
-            
+
         except Exception as e:
             logger.error(f"HTML 渲染失败: {e}")
             raise
+
+    async def _smart_wait(self, page):
+        """
+        智能等待策略：等待页面渲染完成
+
+        策略：
+        1. 最小等待：确保基础 DOM 渲染
+        2. 等待网络空闲：确保图片等资源加载完成
+        3. 最大等待兜底：防止无限等待
+
+        Args:
+            page: Playwright 页面对象
+        """
+        min_wait = getattr(config, 'RENDER_MIN_WAIT', 2) * 1000  # 转换为毫秒
+        max_wait = getattr(config, 'RENDER_MAX_WAIT', 30) * 1000
+        network_idle_timeout = getattr(config, 'RENDER_NETWORK_IDLE_TIMEOUT', 10) * 1000
+
+        # 1. 最小等待（确保基础渲染）
+        await page.wait_for_timeout(min_wait)
+        logger.debug(f"最小等待完成: {min_wait}ms")
+
+        # 2. 等待网络空闲（确保图片等资源加载）
+        try:
+            await page.wait_for_load_state('networkidle', timeout=network_idle_timeout)
+            logger.debug("网络空闲状态达成")
+        except Exception as e:
+            logger.debug(f"等待网络空闲超时（继续）: {e}")
+
+        # 3. 等待图片加载完成
+        try:
+            # 等待所有图片元素加载
+            await page.evaluate("""
+                () => {
+                    const images = document.querySelectorAll('img');
+                    return Promise.all(
+                        Array.from(images).map(img => {
+                            if (img.complete) return Promise.resolve();
+                            return new Promise((resolve) => {
+                                img.onload = resolve;
+                                img.onerror = resolve;  // 即使加载失败也继续
+                            });
+                        })
+                    );
+                }
+            """)
+            logger.debug("图片加载完成")
+        except Exception as e:
+            logger.debug(f"等待图片加载超时（继续）: {e}")
+
+        logger.info(f"智能等待完成（总计约 {min_wait/1000 + network_idle_timeout/1000} 秒内）")
     
     async def export_to_pdf(
-        self, 
-        html_path: str, 
+        self,
+        html_path: str,
         output_filename: str = "final_poster.pdf"
     ) -> str:
         """
         使用 Playwright 将 HTML 导出为 PDF
-        
+
         Args:
             html_path: HTML 文件路径
             output_filename: 输出文件名
-            
+
         Returns:
             PDF 文件路径
         """
         logger.info("开始导出 PDF")
-        
+
         pdf_path = self.output_dir / output_filename
         html_path_abs = Path(html_path).absolute()
-        
+
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch()
@@ -142,17 +195,17 @@ class PosterRenderer:
                         'height': self.poster_height
                     }
                 )
-                
-                # 加载 HTML（增加超时到 120 秒，只等待 DOM 加载）
+
+                # 加载 HTML（只等待 DOM 加载）
                 await page.goto(
-                    f"file://{html_path_abs}", 
-                    timeout=120000,  # 120 秒
-                    wait_until="domcontentloaded"  # 只等待 DOM，不等待所有资源
+                    f"file://{html_path_abs}",
+                    timeout=60000,  # 60 秒
+                    wait_until="domcontentloaded"
                 )
-                
-                # 等待 TailwindCSS 和图片完成渲染（固定等待 10 秒）
-                await page.wait_for_timeout(100000)
-                
+
+                # 智能等待策略：等待网络空闲 + 最小等待确保渲染
+                await self._smart_wait(page)
+
                 # 导出 PDF
                 await page.pdf(
                     path=str(pdf_path),
@@ -160,36 +213,36 @@ class PosterRenderer:
                     height=f"{self.poster_height}px",
                     print_background=True
                 )
-                
+
                 await browser.close()
-            
+
             logger.info(f"PDF 导出完成: {pdf_path}")
             return str(pdf_path)
-            
+
         except Exception as e:
             logger.error(f"PDF 导出失败: {e}")
             raise
     
     async def export_to_png(
-        self, 
-        html_path: str, 
+        self,
+        html_path: str,
         output_filename: str = "final_poster.png"
     ) -> str:
         """
         使用 Playwright 将 HTML 导出为 PNG
-        
+
         Args:
             html_path: HTML 文件路径
             output_filename: 输出文件名
-            
+
         Returns:
             PNG 文件路径
         """
         logger.info("开始导出 PNG")
-        
+
         png_path = self.output_dir / output_filename
         html_path_abs = Path(html_path).absolute()
-        
+
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch()
@@ -199,28 +252,28 @@ class PosterRenderer:
                         'height': self.poster_height
                     }
                 )
-                
-                # 加载 HTML（增加超时到 120 秒，只等待 DOM 加载）
+
+                # 加载 HTML（只等待 DOM 加载）
                 await page.goto(
-                    f"file://{html_path_abs}", 
-                    timeout=120000,  # 120 秒
-                    wait_until="domcontentloaded"  # 只等待 DOM，不等待所有资源
+                    f"file://{html_path_abs}",
+                    timeout=60000,  # 60 秒
+                    wait_until="domcontentloaded"
                 )
-                
-                # 等待 TailwindCSS 和图片完成渲染（固定等待 10 秒）
-                await page.wait_for_timeout(100000)
-                
+
+                # 智能等待策略：等待网络空闲 + 最小等待确保渲染
+                await self._smart_wait(page)
+
                 # 导出截图
                 await page.screenshot(
                     path=str(png_path),
                     full_page=True
                 )
-                
+
                 await browser.close()
-            
+
             logger.info(f"PNG 导出完成: {png_path}")
             return str(png_path)
-            
+
         except Exception as e:
             logger.error(f"PNG 导出失败: {e}")
             raise

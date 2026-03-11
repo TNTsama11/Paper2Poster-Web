@@ -72,3 +72,11 @@ TEMPERATURE = 0.3  # 较低的温度以获得更稳定的输出
 ENABLE_VISION_ANALYSIS = os.getenv("ENABLE_VISION_ANALYSIS", "false").lower() == "true"
 VISION_MODEL = os.getenv("VISION_MODEL", None)  # None 表示自动推荐
 
+# ============================================
+# 渲染配置
+# ============================================
+# 智能等待配置（秒）
+RENDER_NETWORK_IDLE_TIMEOUT = int(os.getenv("RENDER_NETWORK_IDLE_TIMEOUT", "10"))  # 等待网络空闲的最长时间
+RENDER_MIN_WAIT = int(os.getenv("RENDER_MIN_WAIT", "2"))  # 最小等待时间（确保基础渲染）
+RENDER_MAX_WAIT = int(os.getenv("RENDER_MAX_WAIT", "30"))  # 最大等待时间（兜底）
+
